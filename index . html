@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>One Session Closer to CA</title>
+
+<style>
+
+body{
+font-family:Arial;
+text-align:center;
+background:#f4f4f4;
+padding:20px;
+transition:background 0.4s;
+}
+
+#timer{
+font-size:60px;
+margin:25px 0;
+}
+
+button{
+padding:12px 25px;
+font-size:16px;
+margin:8px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+#readBtn{background:green;color:white;}
+#relaxBtn{background:orange;color:white;}
+#stopBtn{background:#444;color:white;}
+#resetBtn{background:red;color:white;}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th,td{
+border:1px solid #ccc;
+padding:8px;
+text-align:center;
+}
+
+#log{
+max-width:800px;
+margin:auto;
+margin-top:40px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>One Session Closer to CA</h1>
+
+<div id="datetime"></div>
+
+<div id="timer">00:00:00</div>
+
+<button id="readBtn" onclick="startRead()">READ</button>
+<button id="stopBtn" onclick="stopTimer()">STOP</button>
+<button id="resetBtn" onclick="resetTimer()">RESET</button>
+
+<h3>CONTROL TIME • CONQUER TITLE</h3>
+
+<div id="log">
+
+<h2>Session Log</h2>
+
+<table>
+
+<tr>
+<th>Date</th>
+<th>Mode</th>
+<th>Duration</th>
+</tr>
+
+<tbody id="logTable"></tbody>
+
+</table>
+
+</div>
+
+<script>
+
+let mode="";
+let startTime=null;
+let sessionLength=0;
+let timer;
+
+let logs = JSON.parse(localStorage.getItem("studyLogs")) || [];
+
+let relaxStart=null;
+
+let flickerInterval;
+let flickerSpeed=0;
+
+let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function beep(duration=200){
+
+let osc = audioCtx.createOscillator();
+let gain = audioCtx.createGain();
+
+osc.connect(gain);
+gain.connect(audioCtx.destination);
+
+osc.frequency.value=700;
+
+osc.start();
+
+setTimeout(()=>{
+osc.stop();
+},duration);
+
+}
+
+function format(sec){
+
+let h=Math.floor(sec/3600);
+let m=Math.floor((sec%3600)/60);
+let s=sec%60;
+
+return String(h).padStart(2,'0')+":"+
+String(m).padStart(2,'0')+":"+
+String(s).padStart(2,'0');
+
+}
+
+function startRead(){
+
+let minutes=prompt("Enter study session minutes");
+
+if(!minutes || isNaN(minutes)) return;
+
+mode="READ";
+
+sessionLength=parseInt(minutes)*60;
+
+startTime=Date.now();
+
+localStorage.setItem("mode",mode);
+localStorage.setItem("startTime",startTime);
+localStorage.setItem("sessionLength",sessionLength);
+
+timer=setInterval(updateTimer,1000);
+
+document.body.style.background="#e8ffe8";
+
+}
+
+function startRelax(){
+
+mode="RELAX";
+
+relaxStart=Date.now();
+
+beep();
+
+localStorage.setItem("mode",mode);
+localStorage.setItem("relaxStart",relaxStart);
+
+document.body.style.background="#ffcccc";
+
+}
+
+function updateTimer(){
+
+if(mode=="READ"){
+
+let elapsed=Math.floor((Date.now()-startTime)/1000);
+
+let remaining=sessionLength-elapsed;
+
+document.getElementById("timer").innerText=format(Math.max(0,remaining));
+
+if(remaining<=0){
+
+logSession(sessionLength);
+
+startRelax();
+
+}
+
+}
+
+else if(mode=="RELAX"){
+
+let elapsed=Math.floor((Date.now()-relaxStart)/1000);
+
+document.getElementById("timer").innerText=format(elapsed);
+
+if(elapsed==300){
+
+beep();
+
+}
+
+if(elapsed==600){
+
+beep();
+
+startFlicker(200);
+
+startContinuousBeep();
+
+}
+
+}
+
+}
+
+function startContinuousBeep(){
+
+setInterval(()=>{
+beep(150);
+},400);
+
+}
+
+function startFlicker(speed){
+
+clearInterval(flickerInterval);
+
+let toggle=false;
+
+flickerInterval=setInterval(()=>{
+
+document.body.style.background=
+toggle ? "#ff6666" : "#ffcccc";
+
+toggle=!toggle;
+
+},speed);
+
+}
+
+function stopTimer(){
+
+clearInterval(timer);
+
+mode="";
+
+localStorage.clear();
+
+document.getElementById("timer").innerText="00:00:00";
+
+}
+
+function resetTimer(){
+
+if(!confirm("Erase all logs?")) return;
+
+localStorage.clear();
+
+logs=[];
+
+renderLogs();
+
+document.getElementById("timer").innerText="00:00:00";
+
+}
+
+function logSession(duration){
+
+logs.unshift({
+
+date:new Date().toLocaleString(),
+mode:"READ",
+duration:duration
+
+});
+
+localStorage.setItem("studyLogs",JSON.stringify(logs));
+
+renderLogs();
+
+}
+
+function renderLogs(){
+
+let table=document.getElementById("logTable");
+
+table.innerHTML="";
+
+logs.forEach(log=>{
+
+let row=table.insertRow();
+
+row.insertCell(0).innerText=log.date;
+row.insertCell(1).innerText=log.mode;
+row.insertCell(2).innerText=format(log.duration);
+
+});
+
+}
+
+function restoreSession(){
+
+let savedMode=localStorage.getItem("mode");
+
+if(savedMode=="READ"){
+
+mode="READ";
+
+startTime=parseInt(localStorage.getItem("startTime"));
+
+sessionLength=parseInt(localStorage.getItem("sessionLength"));
+
+timer=setInterval(updateTimer,1000);
+
+}
+
+if(savedMode=="RELAX"){
+
+mode="RELAX";
+
+relaxStart=parseInt(localStorage.getItem("relaxStart"));
+
+timer=setInterval(updateTimer,1000);
+
+}
+
+}
+
+function updateDateTime(){
+
+document.getElementById("datetime").innerText=new Date().toLocaleString();
+
+}
+
+setInterval(updateDateTime,1000);
+
+renderLogs();
+
+restoreSession();
+
+</script>
+
+</body>
+</html>
+

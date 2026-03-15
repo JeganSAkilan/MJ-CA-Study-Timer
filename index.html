@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>One Session Closer to CA</title>
+<title>MJ's One Session Closer to CA</title>
 
 <style>
 
@@ -47,11 +47,11 @@ text-align:center;
 #log{
 max-width:900px;
 margin:auto;
-margin-top:40px;
+margin-top:30px;
 }
 
 #tracker{
-margin-top:25px;
+margin-top:20px;
 font-size:18px;
 }
 
@@ -60,7 +60,7 @@ font-size:18px;
 
 <body>
 
-<h1>One Session Closer to CA</h1>
+<h1>MJ's One Session Closer to CA</h1>
 
 <div id="datetime"></div>
 
@@ -71,7 +71,11 @@ font-size:18px;
 <button id="stopBtn" onclick="stopTimer()">STOP</button>
 <button id="resetBtn" onclick="resetTimer()">RESET</button>
 
-<h3>CONTROL TIME • CONQUER TITLE</h3>
+<h3>CONTROL TIME CONQUER TITLE</h3>
+
+<div style="font-size:20px;margin-top:10px;">
+Total Read Time: <span id="totalRead">00:00</span>
+</div>
 
 <div id="log">
 
@@ -93,10 +97,6 @@ font-size:18px;
 </div>
 
 <div id="tracker">
-
-<div>Today's Study: <span id="todayStudy">00:00</span></div>
-
-<div>Yesterday's Study: <span id="yesterdayStudy">00:00</span></div>
 
 </div>
 
@@ -151,12 +151,9 @@ beep(150);
 }
 
 function stopAlarms(){
-
 clearInterval(continuousBeepInterval);
 clearInterval(flickerInterval);
-
 document.body.style.background="#f4f4f4";
-
 }
 
 function formatHM(totalMinutes){
@@ -308,7 +305,6 @@ document.getElementById("timer").innerText="00:00:00";
 function resetTimer(){
 
 stopAlarms();
-
 stopTimer();
 
 document.getElementById("timer").innerText="00:00:00";
@@ -349,14 +345,10 @@ let table=document.getElementById("logTable");
 
 table.innerHTML="";
 
+let totalMinutes=0;
 let todayMinutes=0;
-let yesterdayMinutes=0;
 
 let today=new Date().toDateString();
-
-let yesterday=new Date();
-yesterday.setDate(yesterday.getDate()-1);
-yesterday=yesterday.toDateString();
 
 logs.forEach((log,index)=>{
 
@@ -369,20 +361,19 @@ row.insertCell(2).innerText=log.minutes+" min";
 let del=row.insertCell(3);
 del.innerHTML="<button onclick='deleteLog("+index+")'>Delete</button>";
 
+totalMinutes+=log.minutes;
+
 let logDate=new Date(log.date).toDateString();
 
 if(logDate===today){
 todayMinutes+=log.minutes;
 }
 
-if(logDate===yesterday){
-yesterdayMinutes+=log.minutes;
-}
-
 });
 
+document.getElementById("totalRead").innerText=formatHM(totalMinutes);
+
 document.getElementById("todayStudy").innerText=formatHM(todayMinutes);
-document.getElementById("yesterdayStudy").innerText=formatHM(yesterdayMinutes);
 
 }
 

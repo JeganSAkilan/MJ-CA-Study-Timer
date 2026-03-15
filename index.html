@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>MJ's One Session Closer to CA</title>
+<title>One Session Closer to CA</title>
 
 <style>
 
@@ -45,9 +45,14 @@ text-align:center;
 }
 
 #log{
-max-width:800px;
+max-width:900px;
 margin:auto;
 margin-top:40px;
+}
+
+#tracker{
+margin-top:25px;
+font-size:18px;
 }
 
 </style>
@@ -55,7 +60,7 @@ margin-top:40px;
 
 <body>
 
-<h1>MJ's One Session Closer to CA</h1>
+<h1>One Session Closer to CA</h1>
 
 <div id="datetime"></div>
 
@@ -66,11 +71,7 @@ margin-top:40px;
 <button id="stopBtn" onclick="stopTimer()">STOP</button>
 <button id="resetBtn" onclick="resetTimer()">RESET</button>
 
-<h3>CONTROL TIME CONQUER TITLE</h3>
-<div style="font-size:20px;margin-top:10px;">
-Total Read Time: <span id="totalRead">00:00</span>
-</div>
-
+<h3>CONTROL TIME • CONQUER TITLE</h3>
 
 <div id="log">
 
@@ -82,11 +83,20 @@ Total Read Time: <span id="totalRead">00:00</span>
 <th>Date</th>
 <th>Mode</th>
 <th>Minutes Studied</th>
+<th>Delete</th>
 </tr>
 
 <tbody id="logTable"></tbody>
 
 </table>
+
+</div>
+
+<div id="tracker">
+
+<div>Today's Study: <span id="todayStudy">00:00</span></div>
+
+<div>Yesterday's Study: <span id="yesterdayStudy">00:00</span></div>
 
 </div>
 
@@ -100,6 +110,7 @@ let timer;
 let relaxStart=null;
 
 let flickerInterval;
+let continuousBeepInterval;
 
 let logs = JSON.parse(localStorage.getItem("studyLogs")) || [];
 
@@ -117,13 +128,43 @@ osc.frequency.value=700;
 
 osc.start();
 
-setTimeout(()=>{
-osc.stop();
-},duration);
+setTimeout(()=>{osc.stop();},duration);
 
 }
 
-function format(sec){
+function tripleBeep(){
+for(let i=0;i<3;i++){
+setTimeout(()=>{beep();},i*300);
+}
+}
+
+function fiveBeeps(){
+for(let i=0;i<5;i++){
+setTimeout(()=>{beep();},i*250);
+}
+}
+
+function startContinuousBeep(){
+continuousBeepInterval=setInterval(()=>{
+beep(150);
+},400);
+}
+
+function stopContinuousBeep(){
+clearInterval(continuousBeepInterval);
+}
+
+function formatHM(totalMinutes){
+
+let h=Math.floor(totalMinutes/60);
+let m=totalMinutes%60;
+
+return String(h).padStart(2,'0')+":"+
+String(m).padStart(2,'0');
+
+}
+
+function formatTimer(sec){
 
 let h=Math.floor(sec/3600);
 let m=Math.floor((sec%3600)/60);
@@ -136,6 +177,8 @@ String(s).padStart(2,'0');
 }
 
 function startRead(){
+
+stopContinuousBeep();
 
 let minutes=prompt("Enter study session minutes");
 
@@ -194,9 +237,11 @@ let elapsed=Math.floor((Date.now()-startTime)/1000);
 
 let remaining=sessionLength-elapsed;
 
-document.getElementById("timer").innerText=format(Math.max(0,remaining));
+document.getElementById("timer").innerText=formatTimer(Math.max(0,remaining));
 
 if(remaining<=0){
+
+tripleBeep();
 
 logSession(sessionLength);
 
@@ -210,31 +255,18 @@ else if(mode==="RELAX"){
 
 let elapsed=Math.floor((Date.now()-relaxStart)/1000);
 
-document.getElementById("timer").innerText=format(elapsed);
+document.getElementById("timer").innerText=formatTimer(elapsed);
 
 if(elapsed===300){
-
-beep();
-
+fiveBeeps();
 }
 
 if(elapsed===600){
-
-startFlicker();
-
 startContinuousBeep();
-
+startFlicker();
 }
 
 }
-
-}
-
-function startContinuousBeep(){
-
-setInterval(()=>{
-beep(150);
-},400);
 
 }
 
@@ -259,7 +291,10 @@ clearInterval(timer);
 
 mode="";
 
-localStorage.clear();
+localStorage.removeItem("mode");
+localStorage.removeItem("startTime");
+localStorage.removeItem("sessionLength");
+localStorage.removeItem("relaxStart");
 
 document.getElementById("timer").innerText="00:00:00";
 
@@ -267,15 +302,19 @@ document.getElementById("timer").innerText="00:00:00";
 
 function resetTimer(){
 
-if(!confirm("Erase all logs?")) return;
-
-localStorage.clear();
-
-logs=[];
-
-renderLogs();
+stopTimer();
 
 document.getElementById("timer").innerText="00:00:00";
+
+}
+
+function deleteLog(index){
+
+logs.splice(index,1);
+
+localStorage.setItem("studyLogs",JSON.stringify(logs));
+
+renderLogs();
 
 }
 
@@ -303,7 +342,16 @@ let table=document.getElementById("logTable");
 
 table.innerHTML="";
 
-logs.forEach(log=>{
+let todayMinutes=0;
+let yesterdayMinutes=0;
+
+let today=new Date().toDateString();
+
+let yesterday=new Date();
+yesterday.setDate(yesterday.getDate()-1);
+yesterday=yesterday.toDateString();
+
+logs.forEach((log,index)=>{
 
 let row=table.insertRow();
 
@@ -311,7 +359,24 @@ row.insertCell(0).innerText=log.date;
 row.insertCell(1).innerText=log.mode;
 row.insertCell(2).innerText=log.minutes+" min";
 
+let del=row.insertCell(3);
+del.innerHTML="<button onclick='deleteLog("+index+")'>Delete</button>";
+
+let logDate=new Date(log.date).toDateString();
+
+if(logDate===today){
+todayMinutes+=log.minutes;
+}
+
+if(logDate===yesterday){
+yesterdayMinutes+=log.minutes;
+}
+
 });
+
+document.getElementById("todayStudy").innerText=formatHM(todayMinutes);
+
+document.getElementById("yesterdayStudy").innerText=formatHM(yesterdayMinutes);
 
 }
 
@@ -348,36 +413,6 @@ function updateDateTime(){
 document.getElementById("datetime").innerText=new Date().toLocaleString();
 
 }
-
-function renderLogs(){
-
-let table=document.getElementById("logTable");
-
-table.innerHTML="";
-
-let totalMinutes=0;
-
-logs.forEach(log=>{
-
-let row=table.insertRow();
-
-row.insertCell(0).innerText=log.date;
-row.insertCell(1).innerText=log.mode;
-row.insertCell(2).innerText=log.minutes+" min";
-
-totalMinutes+=log.minutes;
-
-});
-
-let hours=Math.floor(totalMinutes/60);
-let minutes=totalMinutes%60;
-
-document.getElementById("totalRead").innerText=
-String(hours).padStart(2,'0')+":"+
-String(minutes).padStart(2,'0');
-
-}
-  
 
 setInterval(updateDateTime,1000);
 

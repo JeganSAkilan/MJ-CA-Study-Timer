@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>MJ's One Session Closer to CA</title>
+<title>One Session Closer to CA</title>
 
 <style>
 
@@ -55,7 +55,7 @@ margin-top:30px;
 
 <body>
 
-<h1>MJ's One Session Closer to CA</h1>
+<h1>One Session Closer to CA</h1>
 
 <div id="datetime"></div>
 
@@ -66,7 +66,7 @@ margin-top:30px;
 <button id="stopBtn" onclick="stopTimer()">STOP</button>
 <button id="resetBtn" onclick="resetTimer()">RESET</button>
 
-<h3>CONTROL TIME CONQUER TITLE</h3>
+<h3>CONTROL TIME • CONQUER TITLE</h3>
 
 <div style="font-size:20px;margin-top:10px;">
 Total Read Time: <span id="totalRead">00:00</span>
@@ -81,7 +81,7 @@ Total Read Time: <span id="totalRead">00:00</span>
 <tr>
 <th>Date</th>
 <th>Mode</th>
-<th>Minutes Studied</th>
+<th>Minutes</th>
 <th>Delete</th>
 </tr>
 
@@ -96,9 +96,8 @@ Total Read Time: <span id="totalRead">00:00</span>
 let mode="";
 let startTime=null;
 let sessionLength=0;
-let timer;
-
 let relaxStart=null;
+let timer;
 
 let flickerInterval;
 let continuousBeepInterval;
@@ -147,13 +146,12 @@ clearInterval(flickerInterval);
 document.body.style.background="#f4f4f4";
 }
 
-function formatHM(totalMinutes){
+function formatHM(min){
 
-let h=Math.floor(totalMinutes/60);
-let m=totalMinutes%60;
+let h=Math.floor(min/60);
+let m=min%60;
 
-return String(h).padStart(2,'0')+":"+
-String(m).padStart(2,'0');
+return String(h).padStart(2,'0')+":"+String(m).padStart(2,'0');
 
 }
 
@@ -172,6 +170,10 @@ String(s).padStart(2,'0');
 function startRead(){
 
 stopAlarms();
+
+if(mode==="RELAX"){
+logRelax();
+}
 
 let minutes=prompt("Enter study session minutes");
 
@@ -192,11 +194,7 @@ document.body.style.background="#e8ffe8";
 function manualRelax(){
 
 if(mode==="READ"){
-
-let studied=Math.floor((Date.now()-startTime)/1000);
-
-logSession(studied);
-
+logRead();
 }
 
 startRelax();
@@ -229,7 +227,7 @@ if(remaining<=0){
 
 tripleBeep();
 
-logSession(sessionLength);
+logRead();
 
 startRelax();
 
@@ -271,11 +269,49 @@ toggle=!toggle;
 
 }
 
+function logRead(){
+
+let seconds=Math.floor((Date.now()-startTime)/1000);
+let minutes=Math.floor(seconds/60);
+
+logs.unshift({
+date:new Date().toLocaleString(),
+mode:"READ",
+minutes:minutes
+});
+
+saveLogs();
+
+}
+
+function logRelax(){
+
+let seconds=Math.floor((Date.now()-relaxStart)/1000);
+let minutes=Math.floor(seconds/60);
+
+logs.unshift({
+date:new Date().toLocaleString(),
+mode:"RELAX",
+minutes:minutes
+});
+
+saveLogs();
+
+}
+
 function stopTimer(){
 
 stopAlarms();
 
 clearInterval(timer);
+
+if(mode==="READ"){
+logRead();
+}
+
+if(mode==="RELAX"){
+logRelax();
+}
 
 mode="";
 
@@ -299,23 +335,11 @@ function deleteLog(index){
 
 logs.splice(index,1);
 
-localStorage.setItem("studyLogs",JSON.stringify(logs));
-
-renderLogs();
+saveLogs();
 
 }
 
-function logSession(duration){
-
-let minutes=Math.floor(duration/60);
-
-logs.unshift({
-
-date:new Date().toLocaleString(),
-mode:"READ",
-minutes:minutes
-
-});
+function saveLogs(){
 
 localStorage.setItem("studyLogs",JSON.stringify(logs));
 
@@ -329,7 +353,7 @@ let table=document.getElementById("logTable");
 
 table.innerHTML="";
 
-let totalMinutes=0;
+let totalRead=0;
 
 logs.forEach((log,index)=>{
 
@@ -342,11 +366,13 @@ row.insertCell(2).innerText=log.minutes+" min";
 let del=row.insertCell(3);
 del.innerHTML="<button onclick='deleteLog("+index+")'>Delete</button>";
 
-totalMinutes+=log.minutes;
+if(log.mode==="READ"){
+totalRead+=log.minutes;
+}
 
 });
 
-document.getElementById("totalRead").innerText=formatHM(totalMinutes);
+document.getElementById("totalRead").innerText=formatHM(totalRead);
 
 }
 

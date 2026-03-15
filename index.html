@@ -50,11 +50,6 @@ margin:auto;
 margin-top:30px;
 }
 
-#tracker{
-margin-top:20px;
-font-size:18px;
-}
-
 </style>
 </head>
 
@@ -93,10 +88,6 @@ Total Read Time: <span id="totalRead">00:00</span>
 <tbody id="logTable"></tbody>
 
 </table>
-
-</div>
-
-<div id="tracker">
 
 </div>
 
@@ -192,10 +183,6 @@ sessionLength=parseInt(minutes)*60;
 
 startTime=Date.now();
 
-localStorage.setItem("mode",mode);
-localStorage.setItem("startTime",startTime);
-localStorage.setItem("sessionLength",sessionLength);
-
 timer=setInterval(updateTimer,1000);
 
 document.body.style.background="#e8ffe8";
@@ -222,10 +209,7 @@ mode="RELAX";
 
 relaxStart=Date.now();
 
-beep();
-
-localStorage.setItem("mode",mode);
-localStorage.setItem("relaxStart",relaxStart);
+tripleBeep();
 
 document.body.style.background="#ffcccc";
 
@@ -289,14 +273,11 @@ toggle=!toggle;
 
 function stopTimer(){
 
+stopAlarms();
+
 clearInterval(timer);
 
 mode="";
-
-localStorage.removeItem("mode");
-localStorage.removeItem("startTime");
-localStorage.removeItem("sessionLength");
-localStorage.removeItem("relaxStart");
 
 document.getElementById("timer").innerText="00:00:00";
 
@@ -305,7 +286,10 @@ document.getElementById("timer").innerText="00:00:00";
 function resetTimer(){
 
 stopAlarms();
-stopTimer();
+
+clearInterval(timer);
+
+mode="";
 
 document.getElementById("timer").innerText="00:00:00";
 
@@ -346,9 +330,6 @@ let table=document.getElementById("logTable");
 table.innerHTML="";
 
 let totalMinutes=0;
-let todayMinutes=0;
-
-let today=new Date().toDateString();
 
 logs.forEach((log,index)=>{
 
@@ -363,45 +344,9 @@ del.innerHTML="<button onclick='deleteLog("+index+")'>Delete</button>";
 
 totalMinutes+=log.minutes;
 
-let logDate=new Date(log.date).toDateString();
-
-if(logDate===today){
-todayMinutes+=log.minutes;
-}
-
 });
 
 document.getElementById("totalRead").innerText=formatHM(totalMinutes);
-
-document.getElementById("todayStudy").innerText=formatHM(todayMinutes);
-
-}
-
-function restoreSession(){
-
-let savedMode=localStorage.getItem("mode");
-
-if(savedMode==="READ"){
-
-mode="READ";
-
-startTime=parseInt(localStorage.getItem("startTime"));
-
-sessionLength=parseInt(localStorage.getItem("sessionLength"));
-
-timer=setInterval(updateTimer,1000);
-
-}
-
-if(savedMode==="RELAX"){
-
-mode="RELAX";
-
-relaxStart=parseInt(localStorage.getItem("relaxStart"));
-
-timer=setInterval(updateTimer,1000);
-
-}
 
 }
 
@@ -414,8 +359,6 @@ document.getElementById("datetime").innerText=new Date().toLocaleString();
 setInterval(updateDateTime,1000);
 
 renderLogs();
-
-restoreSession();
 
 </script>
 

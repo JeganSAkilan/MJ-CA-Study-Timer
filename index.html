@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>One Session Closer to CA</title>
+<title>MJ's One Session Closer to CA</title>
 
 <style>
 
@@ -67,6 +67,10 @@ margin-top:40px;
 <button id="resetBtn" onclick="resetTimer()">RESET</button>
 
 <h3>CONTROL TIME CONQUER TITLE</h3>
+<div style="font-size:20px;margin-top:10px;">
+Total Read Time: <span id="totalRead">00:00</span>
+</div>
+
 
 <div id="log">
 
@@ -344,6 +348,36 @@ function updateDateTime(){
 document.getElementById("datetime").innerText=new Date().toLocaleString();
 
 }
+
+function renderLogs(){
+
+let table=document.getElementById("logTable");
+
+table.innerHTML="";
+
+let totalMinutes=0;
+
+logs.forEach(log=>{
+
+let row=table.insertRow();
+
+row.insertCell(0).innerText=log.date;
+row.insertCell(1).innerText=log.mode;
+row.insertCell(2).innerText=log.minutes+" min";
+
+totalMinutes+=log.minutes;
+
+});
+
+let hours=Math.floor(totalMinutes/60);
+let minutes=totalMinutes%60;
+
+document.getElementById("totalRead").innerText=
+String(hours).padStart(2,'0')+":"+
+String(minutes).padStart(2,'0');
+
+}
+  
 
 setInterval(updateDateTime,1000);
 

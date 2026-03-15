@@ -97,7 +97,8 @@ let mode="";
 let startTime=null;
 let sessionLength=0;
 let relaxStart=null;
-let timer;
+
+let timer=null;
 
 let flickerInterval;
 let continuousBeepInterval;
@@ -135,9 +136,7 @@ setTimeout(()=>{beep();},i*250);
 }
 
 function startContinuousBeep(){
-continuousBeepInterval=setInterval(()=>{
-beep(150);
-},400);
+continuousBeepInterval=setInterval(()=>{beep(150);},400);
 }
 
 function stopAlarms(){
@@ -167,6 +166,11 @@ String(s).padStart(2,'0');
 
 }
 
+function startTimerLoop(){
+clearInterval(timer);
+timer=setInterval(updateTimer,1000);
+}
+
 function startRead(){
 
 stopAlarms();
@@ -185,9 +189,9 @@ sessionLength=parseInt(minutes)*60;
 
 startTime=Date.now();
 
-timer=setInterval(updateTimer,1000);
-
 document.body.style.background="#e8ffe8";
+
+startTimerLoop();
 
 }
 
@@ -210,6 +214,8 @@ relaxStart=Date.now();
 tripleBeep();
 
 document.body.style.background="#ffcccc";
+
+startTimerLoop();
 
 }
 
@@ -377,9 +383,7 @@ document.getElementById("totalRead").innerText=formatHM(totalRead);
 }
 
 function updateDateTime(){
-
 document.getElementById("datetime").innerText=new Date().toLocaleString();
-
 }
 
 setInterval(updateDateTime,1000);
